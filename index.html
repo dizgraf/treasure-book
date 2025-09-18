@@ -10,7 +10,6 @@
     .topbar { margin: 10px; }
     #musicBtn { padding: 8px 16px; font-size: 18px; border-radius: 10px; border: none; background: #ffcc00; color: #000; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,.2); }
     #musicBtn:hover { background: #ffdd33; }
-
     #map { position: relative; width: 800px; height: 500px; margin: 20px auto; 
            background: url("images/treasure-map.png") center/cover no-repeat;
            border: 6px solid #fff; border-radius: 16px; box-shadow: 0 6px 18px rgba(0,0,0,.15); }
@@ -19,14 +18,130 @@
              box-shadow: 0 6px 18px rgba(0,0,0,.15); }
     .level.active { background: gold; color: black; }
     .level:hover { transform: scale(1.1); }
-
     .page { display: none; }
     .silhouette { width: 200px; margin: 20px auto; filter: grayscale(100%) brightness(50%); }
     .options img { width: 120px; margin: 10px; cursor: pointer; border: 3px solid transparent; border-radius: 10px; transition: transform 0.2s; }
     .options img:hover { border-color: yellow; transform: scale(1.1); }
-
     .message { font-size: 24px; margin-top: 20px; }
     button { padding: 10px 20px; font-size: 18px; margin-top: 20px; cursor: pointer; border-radius: 10px; border: none; background: #ffcc00; color: #000; }
     canvas { border: 3px dashed white; border-radius: 15px; background: #87CEEB; margin-top: 20px; }
+    .firework { position: absolute; width: 5px; height: 5px; border-radius: 50%; background: yellow; animation: explode 1s linear infinite; }
+    @keyframes explode { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(10); opacity: 0; } }
+  </style>
+</head>
+<body>
+  <h1>Поиск клада</h1>
 
-    .firework { position: absolute; width: 5px; height: 5px; border-radius: 50%; background: yellow; animation: explode
+  <div class="topbar">
+    <button id="musicBtn" onclick="toggleMusic()">🔊 Музыка</button>
+  </div>
+
+  <!-- Звуки -->
+  <audio id="bgMusic" src="sounds/background.mp3" loop></audio>
+  <audio id="applauseSound" src="sounds/applause.mp3"></audio>
+  <audio id="victorySound" src="sounds/victory.mp3"></audio>
+
+  <!-- Карта -->
+  <div id="map">
+    <div class="level active" id="level1" style="top:50px; left:100px;" onclick="openLevel(1)">1</div>
+    <div class="level" id="level2" style="top:200px; left:250px;" onclick="openLevel(2)">2</div>
+    <div class="level" id="level3" style="top:350px; left:400px;" onclick="openLevel(3)">3</div>
+    <div class="level" id="level4" style="top:150px; left:550px;" onclick="openLevel(4)">4</div>
+    <div class="level" id="level5" style="top:300px; left:700px;" onclick="openLevel(5)">5</div>
+    <div class="level" id="level6" style="top:100px; left:300px;" onclick="openLevel(6)">6</div>
+    <div class="level" id="level7" style="top:250px; left:450px;" onclick="openLevel(7)">7</div>
+    <div class="level" id="level8" style="top:400px; left:600px;" onclick="openLevel(8)">8</div>
+    <div class="level" id="level9" style="top:200px; left:700px;" onclick="openLevel(9)">9</div>
+    <div class="level" id="level10" style="top:350px; left:100px;" onclick="openLevel(10)">10</div>
+  </div>
+
+  <div id="gameScreen" class="page">
+    <h2 id="levelTitle"></h2>
+    <div id="taskContainer"></div>
+    <div id="message" class="message"></div>
+    <button id="nextBtn" style="display:none;" onclick="completeLevel()">Дальше</button>
+  </div>
+
+  <div id="finalScreen" class="page">
+    <h2>🎉 Ты нашёл клад! 🎉</h2>
+    <img src="images/treasure-chest.png" width="300" alt="Сундук с золотом">
+    <p>Поздравляем, отважный исследователь!</p>
+  </div>
+
+  <script>
+    const bgMusic = document.getElementById("bgMusic");
+    const musicBtn = document.getElementById("musicBtn");
+    const applauseSound = document.getElementById("applauseSound");
+    const victorySound = document.getElementById("victorySound");
+
+    window.addEventListener("load", () => {
+      bgMusic.volume = 0.5;
+      bgMusic.play().catch(() => { console.log("Автостарт заблокирован. Включи музыку вручную."); });
+    });
+
+    function toggleMusic() {
+      if (bgMusic.paused) { bgMusic.play(); musicBtn.textContent = "🔊 Музыка"; }
+      else { bgMusic.pause(); musicBtn.textContent = "🔇 Музыка"; }
+    }
+
+    let currentLevel = 1;
+    function openLevel(level) {
+      if (document.getElementById("level" + level).classList.contains("active")) {
+        currentLevel = level;
+        document.getElementById("map").style.display = "none";
+        document.getElementById("gameScreen").style.display = "block";
+        document.getElementById("levelTitle").textContent = "Уровень " + level;
+        loadTask(level);
+      }
+    }
+
+    function loadTask(level) {
+      const task = document.getElementById("taskContainer");
+      task.innerHTML = "";
+      document.getElementById("message").textContent = "";
+      document.getElementById("nextBtn").style.display = "none";
+
+      if (level === 1) { task.innerHTML = `<h3>Кто живёт в море?</h3><img src="images/silhouette-fish.png" class="silhouette"><div class="options"><img src="images/octopus.png" onclick="checkAnswer(false)"><img src="images/fish.png" onclick="checkAnswer(true)"><img src="images/starfish.png" onclick="checkAnswer(false)"></div>`; }
+      if (level === 2) { task.innerHTML = `<h3>Найди дельфина</h3><img src="images/silhouette-dolphin.png" class="silhouette"><div class="options"><img src="images/turtle.png" onclick="checkAnswer(false)"><img src="images/crab.png" onclick="checkAnswer(false)"><img src="images/dolphin.png" onclick="checkAnswer(true)"></div>`; }
+      if (level === 3) { task.innerHTML = `<h3>Кто прячется на дне?</h3><img src="images/silhouette-crab.png" class="silhouette"><div class="options"><img src="images/seahorse.png" onclick="checkAnswer(false)"><img src="images/crab.png" onclick="checkAnswer(true)"><img src="images/fish.png" onclick="checkAnswer(false)"></div>`; }
+      if (level === 4) { task.innerHTML = `<h3>Найди черепаху</h3><img src="images/silhouette-turtle.png" class="silhouette"><div class="options"><img src="images/starfish.png" onclick="checkAnswer(false)"><img src="images/turtle.png" onclick="checkAnswer(true)"><img src="images/octopus.png" onclick="checkAnswer(false)"></div>`; }
+      if (level === 5) { task.innerHTML = `<h3>Секретный уровень! Обведи морского конька</h3><canvas id="drawCanvas" width="400" height="400"></canvas><br><button onclick="checkDrawing()">Проверить</button>`;
+        const canvas = document.getElementById("drawCanvas"); const ctx = canvas.getContext("2d"); let drawing = false; let userPath = [];
+        const guideImg = new Image(); guideImg.src = "images/seahorse-outline.png"; guideImg.onload = () => ctx.drawImage(guideImg, 50, 20, 300, 350);
+        canvas.addEventListener("mousedown", () => { drawing = true; userPath = []; });
+        canvas.addEventListener("mouseup", () => drawing = false);
+        canvas.addEventListener("mousemove", e => { if (!drawing) return; const rect = canvas.getBoundingClientRect(); const x = e.clientX - rect.left; const y = e.clientY - rect.top; userPath.push({x,y}); ctx.fillStyle = "yellow"; ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI*2); ctx.fill(); });
+        window.checkDrawing = function() { if (userPath.length > 80) { document.getElementById("message").textContent = "Отлично! Конёк готов!"; document.getElementById("nextBtn").style.display = "inline-block"; } else { document.getElementById("message").textContent = "Попробуй ещё раз!"; } }
+      }
+      if (level === 6) { task.innerHTML = `<h3>Кто звезда морей?</h3><img src="images/silhouette-starfish.png" class="silhouette"><div class="options"><img src="images/starfish.png" onclick="checkAnswer(true)"><img src="images/fish.png" onclick="checkAnswer(false)"><img src="images/dolphin.png" onclick="checkAnswer(false)"></div>`; }
+      if (level === 7) { task.innerHTML = `<h3>Найди осьминога</h3><img src="images/silhouette-octopus.png" class="silhouette"><div class="options"><img src="images/octopus.png" onclick="checkAnswer(true)"><img src="images/turtle.png" onclick="checkAnswer(false)"><img src="images/seahorse.png" onclick="checkAnswer(false)"></div>`; }
+      if (level === 8) { task.innerHTML = `<h3>Кто плавает рядом?</h3><img src="images/silhouette-fish.png" class="silhouette"><div class="options"><img src="images/fish.png" onclick="checkAnswer(true)"><img src="images/crab.png" onclick="checkAnswer(false)"><img src="images/starfish.png" onclick="checkAnswer(false)"></div>`; }
+      if (level === 9) { task.innerHTML = `<h3>Найди морского конька</h3><img src="images/seahorse-outline.png" class="silhouette"><div class="options"><img src="images/seahorse.png" onclick="checkAnswer(true)"><img src="images/octopus.png" onclick="checkAnswer(false)"><img src="images/turtle.png" onclick="checkAnswer(false)"></div>`; }
+      if (level === 10) { document.getElementById("gameScreen").style.display = "none"; document.getElementById("finalScreen").style.display = "block"; victorySound.play(); launchFireworks(); }
+    }
+
+    function checkAnswer(correct) {
+      const msg = document.getElementById("message");
+      const nextBtn = document.getElementById("nextBtn");
+      if (correct) { msg.textContent = "Молодец!"; nextBtn.style.display = "inline-block"; applauseSound.play(); }
+      else { msg.textContent = "Попробуй ещё раз!"; }
+    }
+
+    function completeLevel() {
+      document.getElementById("gameScreen").style.display = "none"; document.getElementById("map").style.display = "block";
+      let nextLevel = currentLevel + 1;
+      if (document.getElementById("level" + nextLevel)) document.getElementById("level" + nextLevel).classList.add("active");
+    }
+
+    function launchFireworks() {
+      for (let i = 0; i < 20; i++) {
+        let fw = document.createElement("div"); fw.className = "firework";
+        fw.style.left = Math.random() * window.innerWidth + "px";
+        fw.style.top = Math.random() * window.innerHeight + "px";
+        document.body.appendChild(fw); setTimeout(() => fw.remove(), 1000);
+      }
+      setTimeout(launchFireworks, 1500);
+    }
+  </script>
+</body>
+</html>
